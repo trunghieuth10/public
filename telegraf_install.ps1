@@ -161,21 +161,18 @@ function Install-Telegraf {
     }
 
     New-Item -Path $installPath -ItemType Directory -Force | Out-Null
-        try {
-            $currentDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-            $localZip = Get-ChildItem -Path $currentDir -Filter "telegraf-*.zip" | Select-Object -First 1
-            if ($localZip) {
-                Write-Host "Found local ZIP: $($localZip.Name). Using it instead of downloading."
-                $zipFile = $localZip.FullName
-            } else {
-                $downloadUrl = Get-TelegrafDownloadUrl
-                $fileName = Split-Path $downloadUrl -Leaf
-                $zipFile = Join-Path $env:TEMP $fileName
-        
-                Write-Host "Downloading Telegraf from: $downloadUrl"
-                Download-File -url $downloadUrl -destination $zipFile
-            }
-        } catch {
+    
+    try {
+        Write-Host "Checking for local Telegraf ZIP file in current directory..."
+    
+        $currentDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+        $localZip = Get-ChildItem -Path $currentDir -Filter "telegraf-*.zip" | Select-Object -First 1
+    
+        if ($localZip) {
+            Write-Host "Found local ZIP: $($localZip.Name). Using it instead of downloading."
+            $zipFile = $localZip.FullName
+        } else {
+            Write-Host "No local ZIP found. Proceeding to download latest Telegraf release..."
             $downloadUrl = Get-TelegrafDownloadUrl
             $fileName = Split-Path $downloadUrl -Leaf
             $zipFile = Join-Path $env:TEMP $fileName
@@ -183,6 +180,17 @@ function Install-Telegraf {
             Write-Host "Downloading Telegraf from: $downloadUrl"
             Download-File -url $downloadUrl -destination $zipFile
         }
+    }
+    catch {
+        Write-Host "An error occurred while checking for a local ZIP. Falling back to download."
+    
+        $downloadUrl = Get-TelegrafDownloadUrl
+        $fileName = Split-Path $downloadUrl -Leaf
+        $zipFile = Join-Path $env:TEMP $fileName
+    
+        Write-Host "Downloading Telegraf from: $downloadUrl"
+        Download-File -url $downloadUrl -destination $zipFile
+    }
     
     Write-Host "Extracting package..."
     Extract-InnerFolder -zipPath $zipFile -targetPath $installPath
