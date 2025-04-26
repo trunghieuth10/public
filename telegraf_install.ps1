@@ -167,6 +167,9 @@ function Install-Telegraf {
     
         $currentDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
         $localZip = Get-ChildItem -Path $currentDir -Filter "telegraf-*.zip" | Select-Object -First 1
+
+        Write-Host "Dir: $($currentDir)"
+        Write-Host "local ZIP: $($localZip.Name)"
     
         if ($localZip) {
             Write-Host "Found local ZIP: $($localZip.Name). Using it instead of downloading."
