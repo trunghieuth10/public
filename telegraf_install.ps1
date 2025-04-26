@@ -161,23 +161,29 @@ function Install-Telegraf {
     }
 
     New-Item -Path $installPath -ItemType Directory -Force | Out-Null
+        try {
+            $currentDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+            $localZip = Get-ChildItem -Path $currentDir -Filter "telegraf-*.zip" | Select-Object -First 1
+            if ($localZip) {
+                Write-Host "Found local ZIP: $($localZip.Name). Using it instead of downloading."
+                $zipFile = $localZip.FullName
+            } else {
+                $downloadUrl = Get-TelegrafDownloadUrl
+                $fileName = Split-Path $downloadUrl -Leaf
+                $zipFile = Join-Path $env:TEMP $fileName
+        
+                Write-Host "Downloading Telegraf from: $downloadUrl"
+                Download-File -url $downloadUrl -destination $zipFile
+            }
+        } catch {
+            $downloadUrl = Get-TelegrafDownloadUrl
+            $fileName = Split-Path $downloadUrl -Leaf
+            $zipFile = Join-Path $env:TEMP $fileName
     
-    $currentDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-    $localZip = Get-ChildItem -Path $currentDir -Filter "telegraf-*.zip" | Select-Object -First 1
-
-    if ($localZip) {
-        Write-Host "Found local ZIP: $($localZip.Name). Using it instead of downloading."
-        $zipFile = $localZip.FullName
-    } else {
-        $downloadUrl = Get-TelegrafDownloadUrl
-        $fileName = Split-Path $downloadUrl -Leaf
-        $zipFile = Join-Path $env:TEMP $fileName
-
-        Write-Host "Downloading Telegraf from: $downloadUrl"
-        Download-File -url $downloadUrl -destination $zipFile
-    }
-
-
+            Write-Host "Downloading Telegraf from: $downloadUrl"
+            Download-File -url $downloadUrl -destination $zipFile
+        }
+    
     Write-Host "Extracting package..."
     Extract-InnerFolder -zipPath $zipFile -targetPath $installPath
     Remove-Item $zipFile -Force
