@@ -164,23 +164,12 @@ function Install-Telegraf {
     
     try {
         Write-Host "Checking for local Telegraf file in current directory..."
-
-        try {
     
-            $currentDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-            Write-Host "Dir: $($currentDir)"
-            $localZip = Get-ChildItem -Path $currentDir -Filter "telegraf-*.zip" | Select-Object -First 1
-    
-            Write-Host "local ZIP: $($localZip.Name)"
-        }
-        catch {
-            $localZip = Get-ChildItem -Filter "telegraf-*.zip" | Select-Object -First 1
-    
-            Write-Host "local ZIP: $($localZip.Name)"
-        }
+        $currentDir = Get-Location
+        $localZip = Get-ChildItem -Path $currentDir -Filter "telegraf-*.zip" | Select-Object -First 1
     
         if ($localZip) {
-            Write-Host "Found local ZIP: $($localZip.Name). Using it instead of downloading."
+            Write-Host "Found local ZIP: $($localZip.Name). Using it.."
             $zipFile = $localZip.FullName
         } else {
             Write-Host "No local ZIP found. Proceeding to download latest Telegraf release..."
