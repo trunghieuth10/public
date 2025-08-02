@@ -94,6 +94,8 @@ config_telegraf_cloud() {
     local token="IclOtLROVMfMof3zLJIGqXVzmL_ghvQOVLWGN3psEKI6FCQX3HOvBGQ1AH4I064eDp26o_DVk8UoeG3v9uaUTA=="
     local url="https://us-east-1-1.aws.cloud2.influxdata.com/api/v2/telegrafs/0ec56c3e33489000"
     local service_file="/usr/lib/systemd/system/telegraf.service"
+    local override_dir="/etc/systemd/system/telegraf.service.d"
+    local override_file="$override_dir/override.conf"
 
     echo "🔑 Setting INFLUX_TOKEN"
     sudo mkdir -p /etc/default
@@ -101,13 +103,16 @@ config_telegraf_cloud() {
 
     if [ -f "$service_file" ]; then
         echo "🔧 Found Telegraf systemd service"
+        echo "📝 Creating systemd override for Telegraf..."
+        sudo mkdir -p "$override_dir"
+        sudo tee "$override_file" > /dev/null <<EOF
+[Service]
+ExecStart=
+ExecStart=/usr/bin/telegraf --config "$url"
+EnvironmentFile=-/etc/default/telegraf
+EOF
 
-        if grep -q "/etc/telegraf/telegraf.conf" "$service_file"; then
-            echo "📝 Replacing config path in ExecStart..."
-            sudo sed -i "s|/etc/telegraf/telegraf.conf|$url|g" "$service_file"
-            sudo rm -f /etc/telegraf/telegraf.conf
-        fi
-
+        echo "📁 Ensuring Telegraf log directory exists"
         sudo mkdir -p /var/log/telegraf
         sudo touch /var/log/telegraf/telegraf.log
         sudo chown telegraf:telegraf -R /var/log/telegraf
@@ -122,7 +127,7 @@ config_telegraf_cloud() {
         echo "🚀 Restarting Telegraf"
         sudo systemctl restart telegraf
 
-        echo "✅ Telegraf Cloud configuration applied."
+        echo "✅ Telegraf Cloud configuration with override applied."
     else
         echo "⚠️  $service_file not found."
     fi
